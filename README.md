@@ -4,7 +4,13 @@ Helps you to forcefully restart pods of a deployment in a rolling update manner 
 
 
 ### Installation
-TBD
+```bash
+curl -sLo kubectl-rotate_pods https://github.com/mousavian/kubectl-rotate-pods/raw/v1.0.0/src/kubectl-rotate_pods && \
+  chmod +x kubectl-rotate_pods && mv -i kubectl-rotate_pods /usr/local/bin
+
+# Verify
+kubectl rotate-pods --version
+```
 
 
 ### Usage
