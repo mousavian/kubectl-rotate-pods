@@ -1,0 +1,55 @@
+#!/bin/bash
+
+readonly VERSION="1.0.0"
+readonly ANNOTATION_PREFIX="kubectl-rotate-pods"
+NAMESPACE=""
+DEPLOYMENT=""
+REASON=""
+CONTEXT=""
+annotations="\"${ANNOTATION_PREFIX}/time\":\"$(date +'%Y-%m-%dT%H:%M:%S%z')\""
+
+function usage {
+    echo "kubectl rotate-pods"
+    echo "  -d|--deployment   [required]  The deployment name which pods will rotate"
+    echo "  -n|--namespace    [optional]  Defaults to current namespace"
+    echo "  -c|--context      [optional]  Defaults to current context"
+    echo "  -r|--reason       [optional]  Extra information to be stored on why this action is being performed"
+    echo "  -v|--version                  Shows plugin version"
+    echo "  -h|--help                     Shows this help"
+    echo ""
+    echo "Example:"
+    echo "kubectl rotate-pods --deployment app-x --namespace team-y"
+}
+
+function init {
+    while (($#)); do
+        case "$1" in
+            -d|--deployment) DEPLOYMENT="${2:?"deployment is required"}"; readonly DEPLOYMENT; shift 2 ;;
+            -n|--namespace) NAMESPACE="-n $2"; readonly NAMESPACE; shift 2 ;;
+            -c|--context) CONTEXT="-c $2"; readonly CONTEXT; shift 2 ;;
+            -r|--reason) REASON="$2"; readonly REASON; shift 2 ;;
+            -v|--version) echo "$VERSION"; exit 0;;
+            -h|--help) usage; exit 0;;
+            *) printf "ERROR: Unknown option\n\nUsage:\n"; usage; exit 1;;
+        esac
+    done
+
+    if [ "" == "$DEPLOYMENT" ]; then
+        printf "ERROR: 'deployment' is required\n\nUsage:\n"
+        usage
+        exit 1
+    fi
+
+    if [ "" != "$REASON" ]; then
+        annotations="$annotations,\"${ANNOTATION_PREFIX}/reason\":\"$REASON\""
+    fi
+}
+
+function main {
+    init "$@"
+    kubectl patch \
+        "deployment/${DEPLOYMENT}" ${NAMESPACE} ${CONTEXT} \
+        -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{${annotations}}}}}}"
+}
+
+main "$@"
