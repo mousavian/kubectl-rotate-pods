@@ -1,0 +1,1 @@
+# kubectl-rotate-pods
